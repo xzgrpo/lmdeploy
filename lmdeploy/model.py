@@ -281,6 +281,47 @@ class DeepseekR1(DeepseekV3):
         if 'deepseek-r1' in path:
             return 'deepseek-r1'
 
+@MODELS.register_module(name='deepseek_r1_distill')
+class DeepseekR1Distill(BaseChatTemplate):
+    """Chat template for DeepSeek-R1-Distill models."""
+    
+    def __init__(self,
+                 system='Please think step by step to solve this problem. Take your final answer modulo 1000 and return it within \\boxed{}.',
+                 meta_instruction=None,  # Not used in this template
+                 eosys='',
+                 user='<｜User｜>',
+                 eoh='',
+                 assistant='<｜Assistant｜><think>\n',  # Note the \n here
+                 eoa='<｜end▁of▁sentence｜>',
+                 stop_words=['<｜end▁of▁sentence｜>'],
+                 **kwargs):
+        super().__init__(system=system,
+                         meta_instruction=meta_instruction,
+                         eosys=eosys,
+                         user=user,
+                         eoh=eoh,
+                         assistant=assistant,
+                         eoa=eoa,
+                         stop_words=stop_words,
+                         **kwargs)
+    
+    def get_prompt(self, prompt, sequence_start=True):
+        if sequence_start:
+            return '<｜begin▁of▁sentence｜>' + super().get_prompt(prompt, sequence_start)
+        return super().get_prompt(prompt, sequence_start)
+
+    def messages2prompt(self, messages, sequence_start=True, **kwargs):
+        if sequence_start and not isinstance(messages, str):
+            return '<｜begin▁of▁sentence｜>' + super().messages2prompt(messages, sequence_start, **kwargs)
+        return super().messages2prompt(messages, sequence_start, **kwargs)
+
+    @classmethod
+    def match(cls, model_path: str) -> Optional[str]:
+        """Return the model_name that was registered to MODELS."""
+        path = model_path.lower()
+        if 'r1-distill' in path:
+            return 'deepseek_r1_distill'
+            
 
 @MODELS.register_module(name='cogvlm')
 class CogVLM(BaseChatTemplate):
